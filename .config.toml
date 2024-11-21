@@ -1,0 +1,13 @@
+[bathy_data]
+allen_bathy = "C:\\Users\\rcrocker\\Documents\\Datapackages\\moore_account_whole_domain-20240904025042\\Bathymetry---composite-depth\\bathymetry_0.tif"
+gbrmpa_bathy = "C:\\Users\\rcrocker\\Documents\\Datapackages\\GBR10_GBRMP_Bathymetry"
+
+[spatial_data]
+allen_spatial = "C:\\Users\\rcrocker\\Documents\\Datapackages\\Great-Barrier-Reef-and-Torres-Strait-20230310013521"
+gbrmpa_region = "C:\\Users\\rcrocker\\Documents\\Datapackages\\rme_ml_2023_03_30b\\data_files\\region\\reefmod_gbr.gpkg"
+
+[dhw_data]
+noaa_dhw = "C:\\Users\\rcrocker\\Documents\\Datapackages\\noaa_crw_thermal_history_annual_history_v3.5.nc"
+
+[other_data]
+allen_turbid = "C:\\Users\\rcrocker\\Documents\\Datapackages\\moore_account_whole_domain-20240904025042\\Turbidity-2023\\turbidity-annual_0.tif"
