@@ -1,4 +1,4 @@
-module BiodiversityAccountSetup
+module ReefBiodiversityAccountSetup
 
 # Spatial analysis
 include("./spatial_analysis/process_layers.jl")
