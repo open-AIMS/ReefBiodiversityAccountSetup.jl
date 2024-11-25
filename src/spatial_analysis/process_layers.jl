@@ -10,11 +10,9 @@ using Rasters: Intervals
 using Statistics, Distances
 using TOML
 
-function load_config()
-    return TOML.parsefile(".config.toml")
+function load_config(; config_path=".config.toml")::Dict
+    return TOML.parsefile(config_path)
 end
-
-config_file = load_config()
 
 """
     load_spatial_base()
@@ -26,7 +24,7 @@ Loads key spatial data layers from an Allen Atlas dataset (benthic, geomorphic a
 - `geomorphic` : Dataframe of polygons and their geomorphic classes
 - `reef_extent` : Dataframe of polygons showing reef extent (experiemental product in the Allen Atlas)
 """
-function load_spatial_base()
+function load_spatial_base(config_file)
     # Base allen coral atlas data
     allen_data_base = config_file["spatial_data"]["allen_spatial"]
 
@@ -243,7 +241,8 @@ function set_reef_k(
 end
 
 """
-    get_depths(reef_gdf::DataFrame; bathy_data_dir::String=config_file["bathy_data"]["gbrmpa_bathy"], temporary_gpkg_name::String="spatial_data_temp.gpkg", region_path=config_file["spatial_data"]["gbrmpa_region"])
+    get_depths(reef_gdf::DataFrame, config_file::Dict; temporary_gpkg_name::String="spatial_data_temp.gpkg",)::Tuple{DataFrame,Array}
+    get_depths(reef_gdf::DataFrame, gbrmpa_region_path::String, gbrmpa_bathy_path::String; temporary_gpkg_name::String="spatial_data_temp.gpkg",)::Tuple{DataFrame,Array}
 
 Get depths using data sourced from GBRMPA.
 
@@ -253,10 +252,22 @@ Get depths using data sourced from GBRMPA.
 - `region_path` : Location of file containing regional GBRMPA spatial data.
 """
 function get_depths(
-    reef_gdf::DataFrame;
-    bathy_data_dir::String=config_file["bathy_data"]["gbrmpa_bathy"],
-    temporary_gpkg_name::String="spatial_data_temp.gpkg",
-    region_path=config_file["spatial_data"]["gbrmpa_region"]
+    reef_gdf::DataFrame,
+    config_file::Dict;
+    temporary_gpkg_name::String="spatial_data_temp.gpkg"
+)::Tuple{DataFrame,Array}
+    return get_depths(
+        reef_gdf,
+        config_file["spatial_data"]["gbrmpa_region"],
+        config_file["bathy_data"]["gbrmpa_bathy"];
+        temporary_gpkg_name=temporary_gpkg_name
+    )
+end
+function get_depths(
+    reef_gdf::DataFrame,
+    gbrmpa_region_path::String,
+    gbrmpa_bathy_path::String;
+    temporary_gpkg_name::String="spatial_data_temp.gpkg"
 )::Tuple{DataFrame,Array}
     function summary_func(x)
         return if (length(unique(x)) > 1)
@@ -279,7 +290,7 @@ function get_depths(
     ]
 
     for reg in REGIONS
-        src_bathy_path = first(glob("*.tif", joinpath(bathy_data_dir, reg)))
+        src_bathy_path = first(glob("*.tif", joinpath(gbrmpa_bathy_path, reg)))
         src_bathy = Raster(src_bathy_path; mappedcrs=EPSG(4326), lazy=true)
 
         proj_str = ProjString(
@@ -287,7 +298,7 @@ function get_depths(
         )
 
         # Ensure polygon types match
-        region_features = GDF.read(region_path)
+        region_features = GDF.read(gbrmpa_region_path)
         # Force CRS to match raster data
         region_features.geometry = AG.reproject(
             region_features.SHAPE, EPSG(4326), proj_str; order=:trad
@@ -334,7 +345,8 @@ function get_depths(
 end
 
 """
-    get_median_features_allen(reef_gdf::DataFrame; allen_dir::String=config_file["bathy_data"]["allen_bathy"], temporary_gpkg_name::String="spatial_data_temp.gpkg", data_name::Symbol=:depth_med, is_depth=false)
+    get_median_features_allen(reef_gdf::DataFrame, config_file::Dict; temporary_gpkg_name::String="spatial_data_temp.gpkg", data_name::Symbol=:depth_med, is_depth=false)::Tuple{DataFrame,Array}
+    get_median_features_allen(reef_gdf::DataFrame, allen_bathy_filepath::String; temporary_gpkg_name::String="spatial_data_temp.gpkg", data_name::Symbol=:depth_med, is_depth=false)::Tuple{DataFrame,Array}
 
 Get median values of an Allen Atlas Raster over a set of geometries
 
@@ -344,8 +356,23 @@ Get median values of an Allen Atlas Raster over a set of geometries
 - `temporary_gpkg_name` : Filename for temporary geopackage file saved in any previous steps
 """
 function get_median_features_allen(
-    reef_gdf::DataFrame;
-    allen_dir::String=config_file["bathy_data"]["allen_bathy"],
+    reef_gdf::DataFrame,
+    config_file::Dict;
+    temporary_gpkg_name::String="spatial_data_temp.gpkg",
+    data_name::Symbol=:depth_med,
+    is_depth=false
+)::Tuple{DataFrame,Array}
+    return get_median_features_allen(
+        reef_gdf,
+        config_file["bathy_data"]["allen_bathy"];
+        temporary_gpkg_name=temporary_gpkg_name,
+        data_name=data_name,
+        is_depth=is_depth
+    )
+end
+function get_median_features_allen(
+    reef_gdf::DataFrame,
+    allen_bathy_filepath::String;
     temporary_gpkg_name::String="spatial_data_temp.gpkg",
     data_name::Symbol=:depth_med,
     is_depth=false
@@ -353,7 +380,7 @@ function get_median_features_allen(
     # Save temporary file to allow projections to retrieve depths
     GDF.write(temporary_gpkg_name, reef_gdf; driver="GPKG", geom_columns=(:geom,))
 
-    src_allen = Raster(allen_dir; mappedcrs=EPSG(4326), lazy=true)
+    src_allen = Raster(allen_bathy_filepath; mappedcrs=EPSG(4326), lazy=true)
     proj_str = ProjString(AG.toPROJ4(AG.importWKT(crs(src_allen).val; order=:compliant)))
 
     function summary_func(x)
@@ -399,7 +426,8 @@ function get_median_features_allen(
 end
 
 """
-    noaa_dhw_means(reef_gdf::DataFrame; dhw_fn::String=config_file["dhw_data"]["noaa_dhw"], temporary_gpkg_name::String="geomorph_temp.gpkg")::Tuple{YAXArray,Raster}
+    noaa_dhw_means(reef_gdf::DataFrame, config_file::Dict; temporary_gpkg_name::String="geomorph_temp.gpkg")::Tuple{DataFrame,YAXArray}
+    noaa_dhw_means(reef_gdf::DataFrame, dhw_filepath::String; temporary_gpkg_name::String="geomorph_temp.gpkg")::Tuple{DataFrame,YAXArray}
 
 Get zonal mean values of the NOAA DHW product over a set of geometries in a geopackage.
 
@@ -409,14 +437,25 @@ Get zonal mean values of the NOAA DHW product over a set of geometries in a geop
 - `temporary_gpkg_name` : Filename for temporary geopackage file saved in any previous steps.
 """
 function noaa_dhw_means(
-    reef_gdf::DataFrame;
-    dhw_fn::String=config_file["dhw_data"]["noaa_dhw"],
+    reef_gdf::DataFrame,
+    config_file::Dict;
+    temporary_gpkg_name::String="geomorph_temp.gpkg"
+)::Tuple{DataFrame,YAXArray}
+    return noaa_dhw_means(
+        reef_gdf,
+        config_file["dhw_data"]["noaa_dhw"];
+        temporary_gpkg_name=temporary_gpkg_name
+    )
+end
+function noaa_dhw_means(
+    reef_gdf::DataFrame,
+    dhw_filepath::String;
     temporary_gpkg_name::String="geomorph_temp.gpkg"
 )::Tuple{DataFrame,YAXArray}
     GDF.write(temporary_gpkg_name, reef_gdf; driver="GPKG", geom_columns=(:geom,))
 
     noaa_raster = Raster(
-        dhw_fn;
+        dhw_filepath;
         mappedcrs=EPSG(4326),
         crs=convert(WellKnownText, EPSG(4326)),
         name="ann_max_dhw",
