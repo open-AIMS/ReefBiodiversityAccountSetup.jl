@@ -11,7 +11,7 @@ using Statistics, Distances
 using TOML
 
 function load_config()
-    return TOML.parsefile("../.config.toml")
+    return TOML.parsefile(".config.toml")
 end
 
 config_file = load_config()
