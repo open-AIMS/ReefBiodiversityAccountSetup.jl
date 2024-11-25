@@ -10,7 +10,7 @@ using Rasters: Intervals
 using Statistics, Distances
 using TOML
 
-function load_config(; config_path=".config.toml")::Dict
+function load_config(; config_path="config.toml")::Dict
     return TOML.parsefile(config_path)
 end
 
@@ -247,6 +247,7 @@ end
 Get depths using data sourced from GBRMPA.
 
 # Arguments
+- `config_file` : Dict of key filenames loaded from a "config.toml file"
 - `bathy_data_dir` : Directory for GBRMPA bathymetry data
 - `temporary_gpkg_name` : Filename for temporary geopackage file saved in any previous steps.
 - `region_path` : Location of file containing regional GBRMPA spatial data.
@@ -351,6 +352,7 @@ end
 Get median values of an Allen Atlas Raster over a set of geometries
 
 # Arguments
+- `config_file` : Dict of key filenames loaded from a "config.toml file"
 - `reef_gdf` : Current reef geodataframe to augment
 - `allen_dir` : Directory for Allen Atlas Raster data (net cdf or tif)
 - `temporary_gpkg_name` : Filename for temporary geopackage file saved in any previous steps
@@ -432,6 +434,7 @@ end
 Get zonal mean values of the NOAA DHW product over a set of geometries in a geopackage.
 
 # Arguments
+- `config_file` : Dict of key filenames loaded from a "config.toml file"
 - `reef_gdf` : Reef geodataframe to augment
 - `dhw_fn` : Directory for NOAA DHW product data
 - `temporary_gpkg_name` : Filename for temporary geopackage file saved in any previous steps.
