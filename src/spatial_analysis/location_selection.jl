@@ -1,4 +1,4 @@
-using DataFrames
+using DataFrames, GeoDataFrames, Distances
 
 """
     suggest_impact_sites(site_data::DataFrame; min_site_karea::Float64=1000.0, sorted=true)::DataFrame
@@ -43,31 +43,50 @@ function suggest_impact_sites(
 end
 
 """
-    suggest_control_sites(impact_site_id::Int64, site_data::DataFrame)::Matrix
+    suggest_control_sites(impact_site_id::Int64, site_data::DataFrame, category_constraints::Union{Vector{Symbol},Vector{String}}; weightings::Vector{Float64}=ones(size(site_data, 2) - (1 + length(category_constraints))), ID_COLUMN::Union{String,Symbol}=:reef_siteid, distance_func=chebyshev)::DataFrame
 
 Output ordered list of sites which are similar to impact site. Similarity measured by
-normalised Chebyshev distance.
+normalised Chebyshev distance (or `distance_func` where included).
 
 # Arguments
 - `impact_site_id` : Id of site to be used to implement activities at.
-- `site_data` : Data to be used to judge similarity to impact site. Must include geomorphic class.
+- `site_data` : Data to be used to judge similarity to impact site.
+- `category_constraints` : List of column names in `site_data` which are categories that the
+    impact and control sites must both sit within.
+- `weightings` : Weightings for the similarity criteria, to weight importance in control site selection.
+    Default is equal weighting (all 1.0).
+- `ID_COLUMN` : Column in `site_data` which is the unique identifier for sites.
+- `distance_func` : A distance function used to judge "similarity".
 """
 function suggest_control_sites(
     impact_site_id::Int64,
-    site_data::DataFrame
-)::Matrix
-    impact_site_data = site_data[impact_site_id, Not(:geom)]
-    geomorphic_class = impact_site_data.class
-    sites_subset = findall(site_data.class .== geomorphic_class)
+    site_data::DataFrame,
+    category_constraints::Union{Vector{Symbol},Vector{String}};
+    weightings::Vector{Float64}=ones(
+        size(site_data, 2) - (1 + length(category_constraints))
+    ),
+    ID_COLUMN::Union{String,Symbol}=:reef_siteid,
+    distance_func=chebyshev)::DataFrame
+    impact_site_data = site_data[impact_site_id, :]
+    constraints::Vector{Bool} = fill(true, size(site_data, 1))
+    for cc in category_constraints
+        sites_subset = site_data[:, cc] .== impact_site_data[cc]
+        constraints = constraints .& sites_subset
+    end
 
+    criteria_df = site_data[constraints, Not(ID_COLUMN, category_constraints...)]
     distances =
-        chebyshev.(
-            Array(impact_site_data[Not(:class)])',
-            Matrix(site_data[sites_subset, Not(:class, :geom)])
+        distance_func.(
+            Array(impact_site_data[Not(ID_COLUMN, category_constraints...)])',
+            Matrix(criteria_df)
         )
-    distances = dropdims(sum(normalize(distances); dims=2); dims=2)
 
+    scores = normalize(distances) .* weightings
+    distances = dropdims(sum(scores; dims=2); dims=2)
     s_order::Vector{Int64} = sortperm(distances; rev=false)
 
-    return Union{Float64,Int64}[Int64.(sites_subset[s_order]) distances[s_order]]
+    return DataFrame(
+        hcat(findall(constraints)[s_order], scores[s_order, :], distances[s_order]),
+        vcat(["Location index"], names(criteria_df), ["Similarity"])
+    )
 end

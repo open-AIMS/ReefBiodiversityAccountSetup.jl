@@ -7,15 +7,15 @@ using Glob
 using GeoFormatTypes: EPSG
 using Rasters
 using Rasters: Intervals
-using Statistics, Distances
+using Statistics
 using TOML
 
-function load_config(; config_path="config.toml")::Dict
+function load_config(; config_path::String="config.toml")::Dict
     return TOML.parsefile(config_path)
 end
 
 """
-    load_spatial_base()
+    load_spatial_base(config_file::Dict)
 
 Loads key spatial data layers from an Allen Atlas dataset (benthic, geomorphic and extent (experimental)).
 
@@ -24,7 +24,7 @@ Loads key spatial data layers from an Allen Atlas dataset (benthic, geomorphic a
 - `geomorphic` : Dataframe of polygons and their geomorphic classes
 - `reef_extent` : Dataframe of polygons showing reef extent (experiemental product in the Allen Atlas)
 """
-function load_spatial_base(config_file)
+function load_spatial_base(config_file::Dict)
     # Base allen coral atlas data
     allen_data_base = config_file["spatial_data"]["allen_spatial"]
 
@@ -98,7 +98,7 @@ function get_geomorphology_coral_area(
 end
 
 """
-    get_multipoly_geom(outer_gdf::DataFrame, inner_gdf::DataFrame, classes::Union{String,Symbol})
+    multipoly_geom_within(outer_gdf::DataFrame, inner_gdf::DataFrame, classes::Union{String,Symbol})
 
 Combine multipolygons in `outer_gdf` of a particular class which sit inside the polygons of `inner_gdf`
 
@@ -107,7 +107,7 @@ Combine multipolygons in `outer_gdf` of a particular class which sit inside the 
 - `inner_gdf` : Inner dataframe
 - `classes` : Vector giving the unique class of each polygon in `inner_gdf`
 """
-function get_multipoly_geom(
+function multipoly_geom_within(
     outer_gdf::DataFrame,
     inner_gdf::DataFrame,
     classes::Union{String,Symbol}
@@ -204,7 +204,7 @@ function get_multipoly_area(
 end
 
 """
-    set_reef_k(geomorphic_gdf::DataFrame, benthic_gdf::DataFrame; storage_string::String="spatial_data_temp.gpkg")
+    set_reef_k(geomorphic_gdf::DataFrame, benthic_gdf::DataFrame; storage_string::String="spatial_data_temp.gpkg", threshold_k::Float64=0.05)
 
 Set the proportional k area and total site area for the set of polygons in `reef_gdf`, given a set of k areas
     (calculated using `get_multipoly_area`).
@@ -213,11 +213,13 @@ Set the proportional k area and total site area for the set of polygons in `reef
 - `geomorphic_gdf` : geomorphic classes and polygons.
 - `benthic_gdf` : benthic classes and polygons.
 - `storage_string` : filename for temporary file saving to allow coordinate transforms and other manipulations.
+- `threshold_k` : threshold for k below which polygons are filtered out
 """
 function set_reef_k(
     geomorphic_gdf::DataFrame,
     benthic_gdf::DataFrame;
-    storage_string::String="spatial_data_temp.gpkg"
+    storage_string::String="spatial_data_temp.gpkg",
+    threshold_k::Float64=0.05
 )::DataFrame
     benthic_filtered = benthic_gdf[
         benthic_gdf[:, "class"] .== "Coral/Algae", :
@@ -237,7 +239,7 @@ function set_reef_k(
     k = areas_k ./ areas
     geomorphic_gdf[!, :area] = areas
     geomorphic_gdf[!, :k] = k
-    return geomorphic_gdf
+    return geomorphic_gdf[geomorphic_gdf.k.>threshold_k, :]
 end
 
 """
@@ -346,8 +348,8 @@ function get_depths(
 end
 
 """
-    get_median_features_allen(reef_gdf::DataFrame, config_file::Dict; temporary_gpkg_name::String="spatial_data_temp.gpkg", data_name::Symbol=:depth_med, is_depth=false)::Tuple{DataFrame,Array}
-    get_median_features_allen(reef_gdf::DataFrame, allen_bathy_filepath::String; temporary_gpkg_name::String="spatial_data_temp.gpkg", data_name::Symbol=:depth_med, is_depth=false)::Tuple{DataFrame,Array}
+    median_features_allen(reef_gdf::DataFrame, config_file::Dict; temporary_gpkg_name::String="spatial_data_temp.gpkg", data_name::Symbol=:depth_med, is_depth=false)::Tuple{DataFrame,Array}
+    median_features_allen(reef_gdf::DataFrame, allen_bathy_filepath::String; temporary_gpkg_name::String="spatial_data_temp.gpkg", data_name::Symbol=:depth_med, is_depth=false)::Tuple{DataFrame,Array}
 
 Get median values of an Allen Atlas Raster over a set of geometries
 
@@ -357,14 +359,14 @@ Get median values of an Allen Atlas Raster over a set of geometries
 - `allen_dir` : Directory for Allen Atlas Raster data (net cdf or tif)
 - `temporary_gpkg_name` : Filename for temporary geopackage file saved in any previous steps
 """
-function get_median_features_allen(
+function median_features_allen(
     reef_gdf::DataFrame,
     config_file::Dict;
     temporary_gpkg_name::String="spatial_data_temp.gpkg",
     data_name::Symbol=:depth_med,
     is_depth=false
 )::Tuple{DataFrame,Array}
-    return get_median_features_allen(
+    return median_features_allen(
         reef_gdf,
         config_file["bathy_data"]["allen_bathy"];
         temporary_gpkg_name=temporary_gpkg_name,
@@ -372,7 +374,7 @@ function get_median_features_allen(
         is_depth=is_depth
     )
 end
-function get_median_features_allen(
+function median_features_allen(
     reef_gdf::DataFrame,
     allen_bathy_filepath::String;
     temporary_gpkg_name::String="spatial_data_temp.gpkg",
