@@ -31,15 +31,15 @@ function suggest_impact_sites(
         normalize(geomorphic_protection) + normalize(site_data[:, "depth_med"])
     protection_rating[k_area .< min_site_karea] .= 0.0
 
-    new_df = DataFrame(
-        hcat(locations, protection_rating ./ sum(protection_rating)),
-        ["locations", "rating"]
-    )
+    rating = protection_rating ./ sum(protection_rating)
     if sorted
-        return sort!(new_df, ["rating"]; rev=true)
+        s_order::Vector{Int64} = sortperm(rating; rev=true)
+
     else
-        return new_df
+        s_order = 1:n_locs
     end
+    return DataFrame(
+        hcat(locations[s_order], rating[s_order]), ["locations", "rating"])
 end
 
 """
