@@ -133,43 +133,47 @@ function multipoly_geom_within(
 end
 
 """
-    get_multipoly_geom_intersection(outer_gdf::DataFrame, inner_gdf::DataFrame, classes::Union{String,Symbol})
+    multipoly_geom_intersection(outer_gdf::DataFrame, inner_gdf::DataFrame, classes::Union{String,Symbol})
 
-Find the intersection of `inner_gdf` with each poly in `outer_gdf` and combine to create new set of geometries
-with unique classes in `outer_gdf`.
+Find the intersections of `outer_gdf` with each poly in `inner_gdf` and combine to create new set of geometries
+with unique classes in `inner_gdf`.
 
 # Arguments
 - `outer_gdf` : Outer dataframe
 - `inner_gdf` : Inner dataframe
 - `classes` : Vector giving the unique class of each polygon in `inner_gdf`
 """
-function get_multipoly_geom_intersection(
+function multipoly_geom_intersection(
     outer_gdf::DataFrame,
     inner_gdf::DataFrame,
     classes::Union{String,Symbol}
 )
     new_df_store = DataFrame(; geom=AG.createmultipolygon(), class=String[])
     # add to this to get multipolys for each geomorphic class
-    for (id_p, poly) in enumerate(outer_gdf[:, :geom])
-        poly_temp = AG.intersection.(inner_gdf[:, :geom], [poly])[AG.intersects.(
+    for poly in outer_gdf[:, :geom]
+        intersect_idx = findall(AG.intersects.(
             inner_gdf[:, :geom], [poly]
-        )]
-        if !isempty(poly_temp)
-            multipoly_temp = AG.createmultipolygon()
-            for pp in poly_temp
-                if (typeof(pp) == AG.IGeometry{AG.wkbGeometryCollection}) ||
-                    (typeof(pp) == AG.IGeometry{AG.wkbMultiPolygon})
-                    for p_sub in 1:(AG.ngeom(pp) - 1)
-                        if typeof(AG.getgeom(pp, p_sub)) == AG.IGeometry{AG.wkbPolygon}
-                            AG.addgeom!(multipoly_temp, AG.getgeom(pp, p_sub))
+        ))
+        if !isempty(intersect_idx)
+            poly_temp = AG.intersection.(inner_gdf[:, :geom], [poly])[intersect_idx]
+            classes_temp = inner_gdf[intersect_idx, classes]
+            for class in unique(classes_temp)
+                multipoly_temp = AG.createmultipolygon()
+                for pp in poly_temp[classes_temp .== class]
+                    if (typeof(pp) == AG.IGeometry{AG.wkbGeometryCollection}) ||
+                        (typeof(pp) == AG.IGeometry{AG.wkbMultiPolygon})
+                        for p_sub in 1:(AG.ngeom(pp) - 1)
+                            if typeof(AG.getgeom(pp, p_sub)) == AG.IGeometry{AG.wkbPolygon}
+                                AG.addgeom!(multipoly_temp, AG.getgeom(pp, p_sub))
+                            end
                         end
+                    elseif (typeof(pp) == AG.IGeometry{AG.wkbPolygon})
+                        AG.addgeom!(multipoly_temp, pp)
                     end
-                elseif (typeof(pp) == AG.IGeometry{AG.wkbPolygon})
-                    AG.addgeom!(multipoly_temp, pp)
                 end
-            end
-            if !AG.isempty(multipoly_temp)
-                push!(new_df_store, [multipoly_temp, outer_gdf[id_p, classes]])
+                if !AG.isempty(multipoly_temp)
+                    push!(new_df_store, [multipoly_temp, class])
+                end
             end
         end
     end
