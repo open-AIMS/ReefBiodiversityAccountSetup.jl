@@ -62,7 +62,7 @@ function suggest_control_sites(
     impact_site_id::Int64,
     site_data::DataFrame,
     category_constraints::Union{Vector{Symbol},Vector{String}};
-    weightings::Vector{Float64}=ones(
+    weightings::Matrix{Float64}=ones(1,
         size(site_data, 2) - (1 + length(category_constraints))
     ),
     ID_COLUMN::Union{String,Symbol}=:reef_siteid,
@@ -80,13 +80,12 @@ function suggest_control_sites(
             Array(impact_site_data[Not(ID_COLUMN, category_constraints...)])',
             Matrix(criteria_df)
         )
-
     scores = normalize(distances) .* weightings
     distances = dropdims(sum(scores; dims=2); dims=2)
     s_order::Vector{Int64} = sortperm(distances; rev=false)
 
     return DataFrame(
         hcat(findall(constraints)[s_order], scores[s_order, :], distances[s_order]),
-        vcat(["Location index"], names(criteria_df), ["Similarity"])
+        vcat(["Location_index"], names(criteria_df), ["Dissimilarity"])
     )
 end
