@@ -154,6 +154,7 @@ function multipoly_geom_intersection(
         intersect_idx = findall(AG.intersects.(
             inner_gdf[:, :geom], [poly]
         ))
+
         if !isempty(intersect_idx)
             poly_temp = AG.intersection.(inner_gdf[:, :geom], [poly])[intersect_idx]
             classes_temp = inner_gdf[intersect_idx, classes]
@@ -162,7 +163,7 @@ function multipoly_geom_intersection(
                 for pp in poly_temp[classes_temp .== class]
                     if (typeof(pp) == AG.IGeometry{AG.wkbGeometryCollection}) ||
                         (typeof(pp) == AG.IGeometry{AG.wkbMultiPolygon})
-                        for p_sub in 1:(AG.ngeom(pp) - 1)
+                        for p_sub in 0:(AG.ngeom(pp) - 1)
                             if typeof(AG.getgeom(pp, p_sub)) == AG.IGeometry{AG.wkbPolygon}
                                 AG.addgeom!(multipoly_temp, AG.getgeom(pp, p_sub))
                             end
