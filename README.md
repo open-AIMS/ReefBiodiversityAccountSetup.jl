@@ -103,6 +103,25 @@ fig_k_filtered = RBAS.plotting.spatial_map(
 ```
 ![Allen Atlas k data filtered](./assets/imgs/k_area_filtered_example_domain.png)
 
+Extract depths from bathymetry data.
+
+```julia
+# Extract depths from raster file
+geomorphic_filtered, depths = RBAS.spatial_analysis.median_features_allen(
+    geomorphic_filtered, config_file; is_depth=true
+)
+
+# Plot depths
+fig_depth = RBAS.plotting.spatial_map(
+    geomorphic_filtered,
+    geomorphic_filtered[:, :depth_med];
+    opts=Dict(:colorbar_label => "Median depth",
+        :color_map => :lighttest)
+)
+
+```
+![Allen Atlas depth](./assets/imgs/depth_filtered_example_domain.png)
+
 Extract DHWs from data downloaded from NOAA's Coral Reef Watch (<https://coralreefwatch.noaa.gov/satellite/index.php>)
 
 ```julia
@@ -118,7 +137,7 @@ fig_dhw_mean = RBAS.plotting.spatial_map(
 )
 
 ```
-![Allen Atlas dhws filtered](./assets/imgs/dhw_filtered_example_domain.png)
+![Allen Atlas dhws filtered](./assets/imgs/mean_max_example_domain.png)
 
 Plot other available rasters in the Allen Atlas, such as turbidity
 
@@ -132,6 +151,8 @@ geomorphic_filtered, turbidity = RBAS.spatial_analysis.median_features_allen(
 )
 
 ```
+
+![Allen Atlas dhws filtered](./assets/imgs/med_turb_example_domain.png)
 
 Suggest impact and control sites for a restoration activity
 
