@@ -11,35 +11,33 @@ Calculate measure of suitable sites for implementing activities given a set of s
 - `sorted` : true is output should be sorted from best to worst (don't use if using to plot map)
 """
 function suggest_impact_sites(
-    site_data::DataFrame;
-    min_site_karea::Float64=1000.0,
-    sorted=true
+    site_data::DataFrame,
+	criteria::Vector{String},
+	weights::Matrix{Float64},
+	geomorphic_zone::String;
 )::DataFrame
-    n_locs = size(site_data, 1)
-    locations = collect(1:n_locs)
+	temp_site_data = site_data[site_data.habitat.==geomorphic_zone, :]
+    n_locs = size(temp_site_data, 1)
+    locations = temp_site_data.site_id
+	locations_inds = collect(1:n_locs)
     geomorphic_protection = zeros(n_locs)
 
-    geom_vec = site_data[:, :class]
-    geomorphic_protection[geom_vec .== "Sheltered Reef Slope"] .= 3
-    geomorphic_protection[geom_vec .== "Back Reef Slope"] .= 2
-    geomorphic_protection[geom_vec .== "Reef Slope"] .= 1
-    geomorphic_protection[geom_vec .== "Deep Lagoon"] .= 1
+    # geom_vec = site_data.habitat
+    # geomorphic_protection[geom_vec .== "Sheltered Reef Slope"] .= 3
+    # geomorphic_protection[geom_vec .== "Back Reef Slope"] .= 2
+    # geomorphic_protection[geom_vec .== "Reef Slope"] .= 1
+    # geomorphic_protection[geom_vec .== "Deep Lagoon"] .= 1
 
-    k_area = site_data[:, "k"] .* site_data[:, "area"]
+    # site_data[!, "geom_protect"] .= geomorphic_protection
 
-    protection_rating =
-        normalize(geomorphic_protection) + normalize(site_data[:, "depth_med"])
-    protection_rating[k_area .< min_site_karea] .= 0.0
+    norm_mat = normalize(Matrix(temp_site_data[:, criteria]))
+	scores = norm_mat .* weights
+    scores = normalize(dropdims(sum(scores; dims=2); dims=2))
 
-    rating = protection_rating ./ sum(protection_rating)
-    if sorted
-        s_order::Vector{Int64} = sortperm(rating; rev=true)
+    s_order::Vector{Int64} = sortperm(scores; rev=true)
 
-    else
-        s_order = 1:n_locs
-    end
     return DataFrame(
-        hcat(locations[s_order], rating[s_order]), ["locations", "rating"])
+        hcat(locations_inds[s_order], locations[s_order], scores[s_order]), ["Index", "Sites", "Rating"])
 end
 
 """
@@ -82,10 +80,21 @@ function suggest_control_sites(
         )
     scores = normalize(distances) .* weightings
     distances = dropdims(sum(scores; dims=2); dims=2)
-    s_order::Vector{Int64} = sortperm(distances; rev=false)
+	similarity = normalize(1 .- distances)
 
+    s_order::Vector{Int64} = sortperm(distances; rev=false)
+	idx = Int.(findall(constraints)[s_order])
     return DataFrame(
-        hcat(findall(constraints)[s_order], scores[s_order, :], distances[s_order]),
-        vcat(["Location_index"], names(criteria_df), ["Dissimilarity"])
+        hcat(idx, site_data[idx, ID_COLUMN], scores[s_order, :], similarity[s_order]),
+        vcat(["Index", "Location"], names(criteria_df), ["Similarity"])
     )
+end
+
+"""
+    normalize(x)
+
+Min-max normalisation of a vector
+"""
+function normalize(x)
+    return (x .- minimum(x)) ./ (maximum(x) - minimum(x))
 end
