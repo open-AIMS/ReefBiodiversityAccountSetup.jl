@@ -121,10 +121,7 @@ Set default figure settings for spatial figures
 function set_figure_defaults(
     fig_opts::Dict{Any,Any}
 )::Dict{Symbol,Any}
-    fig_opts[:size] = get(fig_opts, :size, (600, 900))
-    fig_opts[:xticklabelsize] = get(fig_opts, :xticklabelsize, 14)
-    fig_opts[:yticklabelsize] = get(fig_opts, :yticklabelsize, 14)
-
+    fig_opts[:size] = get(fig_opts, :size, (600, 700))
     return fig_opts
 end
 
@@ -136,14 +133,12 @@ Set default axis settings for spatial figures
 function set_axis_defaults(
     axis_opts::Dict{Any,Any}
 )::Dict{Symbol,Any}
-    axis_opts[:title] = get(axis_opts, :title, "Study Area")
     axis_opts[:xlabel] = get(axis_opts, :xlabel, "Longitude")
     axis_opts[:ylabel] = get(axis_opts, :ylabel, "Latitude")
-    axis_opts[:xgridwidth] = get(axis_opts, :xgridwidth, 0.5)
-    axis_opts[:ygridwidth] = get(axis_opts, :ygridwidth, 0.5)
     axis_opts[:dest] = get(axis_opts, :dest, "+proj=latlong +datum=WGS84")
     axis_opts[:xgridvisible] = get(axis_opts, :xgridvisible, false)
     axis_opts[:ygridvisible] = get(axis_opts, :ygridvisible, false)
-
+    axis_opts[:yticklabelsvisible] = get(axis_opts, :yticklabelsvisible, false)
+    axis_opts[:xticklabelsvisible] = get(axis_opts, :xticklabelsvisible, false)
     return axis_opts
 end

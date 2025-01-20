@@ -27,4 +27,8 @@ Manifest.toml
 sandbox
 
 # Ignore config files
-config.toml
+*.config*.toml
+*config*.toml
+
+# Ignore docs build files
+docs/build/

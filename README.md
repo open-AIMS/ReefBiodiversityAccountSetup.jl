@@ -2,6 +2,14 @@
 
 Spatial analyses and plots using open access data to inform setup of a reef biodiversity account. Datasets downloadable from the Allen Coral Atlas (<https://www.allencoralatlas.org/>) and NOAA coral reef watch (<https://coralreefwatch.noaa.gov/satellite/index.php>).
 
+## Installation
+
+Download the package using the Julia package installer,
+
+```julia
+pkg> add ReefBiodiversityAccountSetup
+```
+
 ## Development
 
 This repository is in active development. If you see an issue or have suggestions, submit a GitHub issue.
@@ -152,7 +160,7 @@ geomorphic_filtered, turbidity = RBAS.spatial_analysis.median_features_allen(
 
 ```
 
-![Allen Atlas dhws filtered](./assets/imgs/med_turb_example_domain.png)
+![Allen Atlas turbs filtered](./assets/imgs/med_turb_example_domain.png)
 
 Suggest impact and control sites for a restoration activity
 
