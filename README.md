@@ -1,5 +1,7 @@
 # ReefBiodiversityAccountSetup.jl
 
+[![Documentation](https://img.shields.io/badge/docs-dev-blue)](https://open-aims.github.io/ReefBiodiversityAccountSetup.jl/dev/)
+
 Spatial analyses and plots using open access data to inform setup of a reef biodiversity account. Datasets downloadable from the Allen Coral Atlas (<https://www.allencoralatlas.org/>) and NOAA coral reef watch (<https://coralreefwatch.noaa.gov/satellite/index.php>).
 
 ## Installation
