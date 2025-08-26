@@ -22,25 +22,17 @@ Calculate measure of suitable sites for implementing activities given a set of s
 function suggest_impact_sites(
     site_data::DataFrame,
 	criteria::Vector{String},
-	weights::Matrix{Float64},
 	geomorphic_zone::String;
+    weights = ones(length(criteria)),
+    habitat_name="class"
 )::DataFrame
-	temp_site_data = site_data[site_data.habitat.==geomorphic_zone, :]
+	temp_site_data = site_data[site_data[:, habitat_name].==geomorphic_zone, :]
     n_locs = size(temp_site_data, 1)
     locations = temp_site_data.site_id
 	locations_inds = collect(1:n_locs)
-    geomorphic_protection = zeros(n_locs)
 
-    # geom_vec = site_data.habitat
-    # geomorphic_protection[geom_vec .== "Sheltered Reef Slope"] .= 3
-    # geomorphic_protection[geom_vec .== "Back Reef Slope"] .= 2
-    # geomorphic_protection[geom_vec .== "Reef Slope"] .= 1
-    # geomorphic_protection[geom_vec .== "Deep Lagoon"] .= 1
-
-    # site_data[!, "geom_protect"] .= geomorphic_protection
-
-    norm_mat = normalize(Matrix(temp_site_data[:, criteria]))
-	scores = norm_mat .* weights
+    norm_mat = normalize(Matrix(temp_site_data[:, criteria][:, Not(habitat_name)]))
+	scores = norm_mat .* weights[criteria.!=habitat_name]'
     scores = normalize(dropdims(sum(scores; dims=2); dims=2))
 
     s_order::Vector{Int64} = sortperm(scores; rev=true)
@@ -97,13 +89,4 @@ function suggest_control_sites(
         hcat(idx, site_data[idx, ID_COLUMN], scores[s_order, :], similarity[s_order]),
         vcat(["Index", "Location"], names(criteria_df), ["Similarity"])
     )
-end
-
-"""
-    normalize(x)
-
-Min-max normalisation of a vector
-"""
-function normalize(x)
-    return (x .- minimum(x)) ./ (maximum(x) - minimum(x))
 end
