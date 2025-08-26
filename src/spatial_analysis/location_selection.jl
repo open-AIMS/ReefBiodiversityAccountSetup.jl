@@ -1,6 +1,15 @@
 using DataFrames, GeoDataFrames, Distances
 
 """
+    normalize(x)
+
+Min-max normalisation of a vector
+"""
+function normalize(x)
+    return (x .- minimum(x, dims=1)) ./ (maximum(x, dims=1) - minimum(x, dims=1))
+end
+
+"""
     suggest_impact_sites(site_data::DataFrame; min_site_karea::Float64=1000.0, sorted=true)::DataFrame
 
 Calculate measure of suitable sites for implementing activities given a set of spatial data
