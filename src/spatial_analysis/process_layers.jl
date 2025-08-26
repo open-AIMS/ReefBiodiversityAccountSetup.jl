@@ -512,12 +512,3 @@ function noaa_dhw_means(
 
     return reef_gdf, YAXArray(ax_list, dhw_means)
 end
-
-"""
-    normalize(x)
-
-Min-max normalisation of a vector
-"""
-function normalize(x)
-    return (x .- minimum(x)) ./ (maximum(x) - minimum(x))
-end
