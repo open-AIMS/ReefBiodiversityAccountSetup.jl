@@ -130,7 +130,7 @@ fig_depth = RBAS.plotting.spatial_map(
 )
 
 ```
-![Allen Atlas depth](./assets/imgs/depth_filtered_example_domain.png)
+![Allen Atlas depth](./assets/imgs/moore_depth_ex.png)
 
 Extract DHWs from data downloaded from NOAA's Coral Reef Watch (<https://coralreefwatch.noaa.gov/satellite/index.php>)
 
@@ -147,7 +147,7 @@ fig_dhw_mean = RBAS.plotting.spatial_map(
 )
 
 ```
-![Allen Atlas dhws filtered](./assets/imgs/mean_max_example_domain.png)
+![Allen Atlas dhws filtered](./assets/imgs/moore_dhw_mean_ex.png)
 
 Plot other available rasters in the Allen Atlas, such as turbidity
 
@@ -162,7 +162,7 @@ geomorphic_filtered, turbidity = RBAS.spatial_analysis.median_features_allen(
 
 ```
 
-![Allen Atlas turbs filtered](./assets/imgs/med_turb_example_domain.png)
+![Allen Atlas turbs filtered](./assets/imgs/moore_turb_med_ex.png)
 
 Suggest impact and control sites for a restoration activity
 

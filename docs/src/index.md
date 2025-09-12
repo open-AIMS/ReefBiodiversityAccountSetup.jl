@@ -174,7 +174,7 @@ spatial polygons for the area of interest. Median depth, for example, can be der
             :color_map => :lighttest)
     )
 ```
-![Allen Atlas depth](./assets/imgs/depth_filtered_example_domain.png)
+![Allen Atlas depth](./assets/imgs/moore_depth_ex.png)
 
 Another key quantity in understanding coral vulnerability to heat stress is Degree Heating Weeks. This information can be
 derived fromt the NOAA Reef Watch database (<https://coralreefwatch.noaa.gov/satellite/index.php>) and zonally
@@ -200,7 +200,7 @@ aggregated to visualise broadscale estimates of heat stress.
 
 ```
 
-![Allen Atlas dhws filtered](./assets/imgs/mean_max_dhw_example_domain.png)
+![Allen Atlas dhws filtered](./assets/imgs/moore_dhw_mean_ex.png)
 
 The Allen Atlas datasets can also be downloaded with several key environmental variables, such as turbidity. These can
 also be zonally aggregated and plotted.
@@ -223,7 +223,7 @@ also be zonally aggregated and plotted.
     )
 ```
 
-![Allen Atlas turbs filtered](./assets/imgs/med_turb_example_domain.png)
+![Allen Atlas turbs filtered](./assets/imgs/moore_turb_med_ex.png)
 
 ## Selecting project and control sites
 
